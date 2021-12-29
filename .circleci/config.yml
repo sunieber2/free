@@ -1,10 +1,25 @@
 version: 2.1
  
-jobs:
-  build:
+jobs: # conditional steps may also be defined in `commands:`
+  job_with_optional_custom_checkout:
+    parameters:
+      custom_checkout:
+        type: string
+        default: ""
     machine:
-      resource_class: gpu.nvidia.small
-      image: ubuntu-1604-cuda-10.1:201909-23
+      image: ubuntu-2004:202107-02
     steps:
-      - run: nvidia-smi
-      - run: docker run --gpus all nvidia/cuda:9.0-base nvidia-smi
+      - when:
+          condition: <<parameters.custom_checkout>>
+          steps:
+            - run: echo "my custom checkout"
+      - unless:
+          condition: <<parameters.custom_checkout>>
+          steps:
+            - checkout
+workflows:
+  build-test-deploy:
+    jobs:
+      - job_with_optional_custom_checkout:
+          custom_checkout: "any non-empty string is truthy"
+      - job_with_optional_custom_checkout
